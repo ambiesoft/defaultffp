@@ -24,8 +24,10 @@ namespace defaultffp
                 return iniFile_;
             }
         }
-        public FormMain()
+        readonly string runpro_;
+        public FormMain(string runpro)
         {
+            runpro_=runpro;
             InitializeComponent();
 
             // FileInfo fi = new FileInfo(Application.ExecutablePath);
@@ -83,11 +85,27 @@ namespace defaultffp
         private void FormMain_Load(object sender, EventArgs e)
         {
             updateList();
-            int index;
-            Profile.GetInt("option", "index", -1, out index, IniFile);
-            if (0 <= index && index < listMain.Items.Count)
+            if (string.IsNullOrEmpty(runpro_))
             {
+                int index;
+                Profile.GetInt("option", "index", -1, out index, IniFile);
+                if (0 <= index && index < listMain.Items.Count)
+                {
+                    listMain.SelectedIndex = index;
+                }
+            }
+            else
+            {
+                int index = listMain.FindStringExact(runpro_);
+                if (index < 0)
+                {
+                    CppUtils.Alert(string.Format(Properties.Resources.PROFILE_NOT_FOUND, runpro_));
+                    Close();
+                    return;
+                }
                 listMain.SelectedIndex = index;
+                this.doSSR();
+                Close();
             }
         }
 
@@ -150,6 +168,10 @@ namespace defaultffp
 
         private void btnSRR_Click(object sender, EventArgs e)
         {
+            doSSR();
+        }
+        internal void doSSR()
+        {
             try
             {
                 // this.UseWaitCursor = true;
@@ -200,7 +222,7 @@ namespace defaultffp
                             {
                                 p.Kill();
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             { 
                             }
                         }
@@ -214,37 +236,40 @@ namespace defaultffp
                     return;
                 }
 
-
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = filefoxpath;
-                psi.UseShellExecute = true;
-                Process firefox;
                 try
                 {
-                    firefox = Process.Start(psi);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, Application.ProductName,
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = filefoxpath;
+                    psi.UseShellExecute = false;
+                    Process firefox;
+                    try
+                    {
+                        firefox = Process.Start(psi);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, Application.ProductName,
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
-                if (firefox == null)
-                {
-                    System.Threading.Thread.Sleep(5000);
+                    if (firefox == null)
+                    {
+                        System.Threading.Thread.Sleep(5000);
+                    }
+                    else
+                    {
+                        firefox.WaitForInputIdle();
+                    }
                 }
-                else
+                finally
                 {
-                    firefox.WaitForInputIdle();
-                }
-
-
-                if (!doWrite(current))
-                {
-                    MessageBox.Show("Write failed", Application.ProductName,
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    if (!doWrite(current))
+                    {
+                        MessageBox.Show("Write failed", Application.ProductName,
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        
+                    }
                 }
             }
             finally

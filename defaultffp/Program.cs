@@ -10,11 +10,20 @@ namespace defaultffp
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            string runprofile=null;
+            if (args.Length == 2)
+            {
+                if (args[0] == "/p")
+                {
+                    runprofile = args[1];
+                }
+            }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormMain());
+            FormMain form = new FormMain(runprofile);
+            Application.Run(form);
         }
     }
 }
